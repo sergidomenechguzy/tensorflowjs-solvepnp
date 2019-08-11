@@ -1,0 +1,14 @@
+{
+  "name": "solvepnp",
+  "version": "1.0.0",
+  "description": "SolvePnP implementation using tensorflow.js",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "Sergi Domenech Guzy",
+  "license": "ISC",
+  "dependencies": {
+    "@tensorflow/tfjs": "^1.2.7"
+  }
+}
