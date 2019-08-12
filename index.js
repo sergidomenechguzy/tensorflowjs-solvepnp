@@ -7,20 +7,20 @@ const Ps = tf.tensor2d([
   [-0.2, 0.4, 1, 1],
   [0.1, 1.1, 3, 1]
 ]);
-const ps = tf.tensor2d([
-  [2063.9523926, 438.5108948, 0.3202356],
-  [2527.7749023, 1448.7738037, -0.1905859],
-  [2461.2624512, -2307.2189941, -1.2053751],
-  [1571.5290527, 1802.5941162, -0.0869398],
-  [2612.279541, 1.8300147, -1.2407744]
-]);
 // const ps = tf.tensor2d([
-//   [1480, 920, 2],
-//   [580, 2420, 2],
-//   [3660, 3340, 4],
-// 	[340, 1360, 1],
-// 	[1720, 3980, 3]
+//   [2063.9523926, 438.5108948, 0.3202356],
+//   [2527.7749023, 1448.7738037, -0.1905859],
+//   [2461.2624512, -2307.2189941, -1.2053751],
+//   [1571.5290527, 1802.5941162, -0.0869398],
+//   [2612.279541, 1.8300147, -1.2407744]
 // ]);
+const ps = tf.tensor2d([
+  [1480, 920, 2],
+  [580, 2420, 2],
+  [3660, 3340, 4],
+	[340, 1360, 1],
+	[1720, 3980, 3]
+]);
 // const ps = tf.tensor2d([[740, 460, 1], [290, 1210, 1], [915, 835, 1]]);
 
 const f = 1000;
@@ -30,12 +30,14 @@ const c_x = imageWidth / 2;
 const c_y = imageHeight / 2;
 const A = tf.tensor2d([[f, 0, c_x], [0, f, c_y], [0, 0, 1]]);
 
-const r = tf.tensor1d([Math.random(), Math.random(), Math.random()]).variable();
-const t = tf
-  .tensor2d([[Math.random()], [Math.random()], [Math.random()]])
-  .variable();
-// const r = tf.tensor1d([2, 1, 3.5]).variable();
-// const t = tf.tensor2d([[0.6], [2], [0.3]]).variable();
+// const r = tf.tensor1d([Math.random(), Math.random(), Math.random()]).variable();
+// const t = tf
+//   .tensor2d([[Math.random()], [Math.random()], [Math.random()]])
+//   .variable();
+const r = tf.tensor1d([2, 1, 3.5]).variable();
+const t = tf.tensor2d([[0.6], [2], [0.3]]).variable();
+// const r = tf.tensor1d([0, 0, 0]).variable();
+// const t = tf.tensor2d([[0], [0], [0]]).variable();
 
 const solvePNP = Ps => {
   const sin = tf.sin(r);
@@ -85,26 +87,26 @@ const solvePNP = Ps => {
   // return res.div(data.get(2));
 };
 
-const loss = (pred, label) => {
-  const res = label
-    .sub(pred)
-    .square()
-    .mean();
-  return res;
-};
+// const loss = (pred, label) => {
+//   const res = label
+//     .sub(pred)
+//     .square()
+//     .mean();
+//   return res;
+// };
 
-const trainNet = () => {
-  const learningRate = 0.1;
-  const optimizer = tf.train.adagrad(learningRate);
+// const trainNet = () => {
+//   const learningRate = 0.1;
+//   const optimizer = tf.train.adagrad(learningRate);
 
-  for (let i = 0; i < 5000; i++) {
-    const cost = optimizer.minimize(() => loss(solvePNP(Ps), ps), true);
-    cost.print();
-  }
+//   for (let i = 0; i < 5000; i++) {
+//     const cost = optimizer.minimize(() => loss(solvePNP(Ps), ps), true);
+//     // cost.print();
+//   }
 
-  r.print();
-  t.print();
-};
+//   r.print();
+//   t.print();
+// };
 
-trainNet();
+// trainNet();
 solvePNP(Ps).print();
