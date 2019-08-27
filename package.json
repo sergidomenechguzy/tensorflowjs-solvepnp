@@ -11,6 +11,7 @@
   "dependencies": {
     "@tensorflow/tfjs": "^1.2.7",
     "@tensorflow/tfjs-node": "^1.2.8",
-    "@tensorflow/tfjs-node-gpu": "^1.2.8"
+    "@tensorflow/tfjs-node-gpu": "^1.2.8",
+    "@tensorflow/tfjs-vis": "^1.1.0"
   }
 }

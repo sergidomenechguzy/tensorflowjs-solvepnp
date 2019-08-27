@@ -1,6 +1,16 @@
-const tf = require('@tensorflow/tfjs');
-// require('@tensorflow/tfjs-node');
+// const tf = require('@tensorflow/tfjs');
+// const tf = require('@tensorflow/tfjs-node');
 // require('@tensorflow/tfjs-node-gpu');
+
+const plotData = {
+  r_x: [],
+  r_y: [],
+  r_z: [],
+  t_x: [],
+  t_y: [],
+  t_z: [],
+  loss: []
+};
 
 const f = 1000;
 const imageWidth = 1080;
@@ -17,13 +27,13 @@ const A = tf.tensor2d([[f, 0, c_x], [0, f, c_y], [0, 0, 1]]);
 // ]);
 // const Ps = tf.tensor2d([[1, 0, 3], [0, 1, 3], [0, 0, 4], [0, 0, 3], [1, 1, 4]]);
 
-const Ps = tf.randomNormal([10, 3]).mul(5);
+const Ps = tf.randomUniform([10, 3], 0.1, 5);
 
 Ps.print();
 
 // start rotation and translation values for training
-const r_train = tf.tensor1d([-0.2, 0.3, 0]).variable();
-const t_train = tf.tensor1d([0, 0, 2.5]).variable();
+const r_train = tf.tensor1d([1, 0.3, -0.2]).variable();
+const t_train = tf.tensor1d([0.8, 0.3, 2]).variable();
 
 // rotation and translation values for calculation
 const r = tf.tensor1d([0, 0.1, 0]);
@@ -74,47 +84,96 @@ const calculate2dPoints = (Ps, r = r_train, t = t_train) => {
 
 const solvePnP = ps => {
   const start = Date.now();
-  const learningRate = 0.03;
-  const optimizer = tf.train.adamax(learningRate);
-  let cost;
+  let learningRate = 0.0003;
+  let rho = 0.8;
+  let optimizer = tf.train.rmsprop(learningRate, rho, 0.0, null, true);
+  let loss;
+  let i = 0;
 
-  for (let i = 0; i < 4000; i++) {
-    cost = optimizer.minimize(
+  for (i; i < 4000; i++) {
+    const r_buffer = r_train.bufferSync();
+    const t_buffer = t_train.bufferSync();
+    plotData.r_x.push({ x: i, y: r_buffer.get(0) });
+    plotData.r_y.push({ x: i, y: r_buffer.get(1) });
+    plotData.r_z.push({ x: i, y: r_buffer.get(2) });
+    plotData.t_x.push({ x: i, y: t_buffer.get(0) });
+    plotData.t_y.push({ x: i, y: t_buffer.get(1) });
+    plotData.t_z.push({ x: i, y: t_buffer.get(2) });
+
+    loss = optimizer.minimize(
       () => tf.losses.meanSquaredError(ps, calculate2dPoints(Ps)),
       true
     );
+    plotData.loss.push({ x: i, y: loss.bufferSync().get(0) });
+
+    if (i % 100 === 0) {
+      console.log('LOSS:');
+      loss.print();
+    }
+    if (
+      loss
+        .less(tf.scalar(0.5))
+        .bufferSync()
+        .get(0)
+    ) {
+      break;
+    }
   }
   const ps_pred = calculate2dPoints(Ps);
   const diff = Date.now() - start;
-  console.log(`Duration: ${diff}ms`);
-  return [ps_pred, cost];
+  return [ps_pred, loss, i, diff];
 };
 
 r_start = r_train.clone();
 t_start = t_train.clone();
 
 const ps_label = calculate2dPoints(Ps, r, t);
-const [ps_pred, cost] = solvePnP(ps_label);
+const [ps_pred, loss, iterations, duration] = solvePnP(ps_label);
 
-console.log('============================');
+console.log('\n===========================================\n');
 console.log('Start Rotation:');
 r_start.print();
 console.log('Final Rotation:');
 r_train.print();
 console.log('Actual Rotation:');
 r.print();
-console.log('============================');
+console.log('\n===========================================\n');
 console.log('Start Translation:');
 t_start.print();
 console.log('Final Translation:');
 t_train.print();
 console.log('Actual Translation:');
 t.print();
-console.log('============================');
+console.log('\n===========================================\n');
 console.log('Prediction:');
 ps_pred.print();
 console.log('Label:');
 ps_label.print();
-console.log('============================');
+console.log('\n===========================================\n');
+console.log(`Iterations: ${iterations}`);
+console.log(`Duration: ${duration}ms`);
 console.log('Distance:');
-cost.print();
+loss.print();
+
+const renderPlot = () => {
+  const rotationSurface = tfvis
+    .visor()
+    .surface({ name: 'Rotation', tab: 'Values' });
+  tfvis.render.linechart(
+    rotationSurface,
+    { values: [plotData.r_x, plotData.r_y, plotData.r_z] },
+    {}
+  );
+  const translationSurface = tfvis
+    .visor()
+    .surface({ name: 'Translation', tab: 'Values' });
+  tfvis.render.linechart(
+    translationSurface,
+    { values: [plotData.t_x, plotData.t_y, plotData.t_z] },
+    {}
+  );
+  const lossSurface = tfvis.visor().surface({ name: 'Loss', tab: 'Values' });
+  tfvis.render.linechart(lossSurface, { values: [plotData.loss] }, {});
+};
+
+document.addEventListener('DOMContentLoaded', renderPlot);
